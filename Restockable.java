@@ -1,159 +1,188 @@
-package Inventorymanagementsystem;
+package InventoryManagementSystem;
 import java.util.*;
-interface Restockable {
-    void restock(int quantity);
-}
-class OutOfStockException extends Exception {
-    public OutOfStockException(String message) {
-        super(message);
-    }
-}
-class InvalidProductException extends Exception {
-    public InvalidProductException(String message) {
-        super(message);
-    }
-}
-abstract class Product implements Restockable {
-    String name;
-    int stock;
-    String expiryDate;
-
-    public Product(String name, int stock, String expiryDate) {
-        this.name = name;
-        this.stock = stock;
-        this.expiryDate = expiryDate;
+public interface Restockable {
+        void restock(int quantity);
     }
 
-    abstract void displayInfo();
+    abstract class Product implements Restockable {
+        String id;
+        String name;
+        int stock;
+        String expiryDate;
 
-    public boolean isLowStock() {
-        return stock < 5;
-    }
+        public Product(String id, String name, int stock, String expiryDate) {
+            this.id = id;
+            this.name = name;
+            this.stock = stock;
+            this.expiryDate = expiryDate;
+        }
 
-    public void restock(int quantity) {
-        stock += quantity;
-        System.out.println(name + " को फिर से स्टॉक किया गया: अब स्टॉक = " + stock);
-    }
+        public void restock(int quantity) {
+            stock += quantity;
+        }
 
-    public void reduceStock(int quantity) throws OutOfStockException {
-        if (stock < quantity) throw new OutOfStockException(name + " का स्टॉक पूरा नहीं है!");
-        stock -= quantity;
-    }
-}
-class Electronics extends Product {
-    public Electronics(String name, int stock, String expiryDate) {
-        super(name, stock, expiryDate);
-    }
-    void displayInfo() {
-        System.out.println("Electronics: " + name + ", Stock: " + stock + ", Expiry: " + expiryDate);
-    }
-}
+        public boolean isLowStock() {
+            return stock < 5;
+        }
 
-class Clothing extends Product {
-    public Clothing(String name, int stock, String expiryDate) {
-        super(name, stock, expiryDate);
-    }
-    void displayInfo() {
-        System.out.println("Clothing: " + name + ", Stock: " + stock + ", Expiry: " + expiryDate);
-    }
-}
-
-class Grocery extends Product {
-    public Grocery(String name, int stock, String expiryDate) {
-        super(name, stock, expiryDate);
-    }
-    void displayInfo() {
-        System.out.println("Grocery: " + name + ", Stock: " + stock + ", Expiry: " + expiryDate);
-    }
-}
-class Inventory {
-    List<Product> products = new ArrayList<>();
-
-    public void addProduct(Product p) {
-        products.add(p);
-        System.out.println(p.name + " इन्वेंट्री में जोड़ा गया।");
+        public String toString() {
+            return getClass().getSimpleName() + " = " + "product Name-" + name + ", ID: " + id + " , Stock: " + stock + " , Exp: " + expiryDate;
+        }
     }
 
-    public void removeProduct(String name) throws InvalidProductException {
-        for (Product p : products) {
-            if (p.name.equalsIgnoreCase(name)) {
-                products.remove(p);
-                System.out.println(name + " को हटाया गया।");
+    class Electronics extends Product {
+        public Electronics(String id, String name, int stock, String expiryDate) {
+            super(id, name, stock, expiryDate);
+        }
+    }
+
+    class Clothing extends Product {
+        public Clothing(String id, String name, int stock, String expiryDate) {
+            super(id, name, stock, expiryDate);
+        }
+    }
+
+    class Grocery extends Product {
+        public Grocery(String id, String name, int stock, String expiryDate) {
+            super(id, name, stock, expiryDate);
+        }
+    }
+
+    class OutOfStockException extends Exception {
+        public OutOfStockException(String message) {
+            super(message);
+        }
+    }
+
+    class InvalidProductException extends Exception {
+        public InvalidProductException(String message) {
+            super(message);
+        }
+    }
+
+    class Supplier {
+        String name;
+
+        public Supplier(String name) {
+            this.name = name;
+        }
+
+        public void orderProduct(Product product, int quantity) {
+            System.out.println("Supplier '" + name + "' ordered " + quantity + " units of " + product.name);
+        }
+    }
+
+    class Inventory {
+        ArrayList<Product> products = new ArrayList<>();
+
+        public void addProduct(Product p) {
+            products.add(p);
+            System.out.println("Added product: " + p);
+        }
+
+        public void removeProduct(String id) throws InvalidProductException {
+            for (Product p : products) {
+                if (p.id.equals(id)) {
+                    products.remove(p);
+                    System.out.println("Removed product: " + p.name);
+                    return;
+                }
+            }
+            throw new InvalidProductException("Product ID not found.");
+        }
+
+        public void showInventory() {
+            if (products.isEmpty()) {
+                System.out.println("Inventory is empty.");
                 return;
             }
-        }
-        throw new InvalidProductException("❌ " + name + " इन्वेंट्री में नहीं है।");
-    }
 
-    public void checkLowStock() {
-        for (Product p : products) {
-            if (p.isLowStock()) {
-                System.out.println("⚠ लो स्टॉक अलर्ट: " + p.name);
+            for (Product p : products) {
+                System.out.println(p);
+                if (p.isLowStock()) {
+                    System.out.println("Low stock alert for " + p.name);
+                }
+            }
+        }
+
+        public void restockLowItems(Supplier supplier) {
+            for (Product p : products) {
+                if (p.isLowStock()) {
+                    supplier.orderProduct(p, 10);
+                    p.restock(10);
+                    System.out.println("Restocked " + p.name + " to " + p.stock + " units.");
+                }
             }
         }
     }
-    public void showInventory() {
-        for (Product p : products) {
-            p.displayInfo();
+
+    class inventoryMain {
+        public static void main(String[] args) {
+            Scanner sc = new Scanner(System.in);
+            Inventory inventory = new Inventory();
+            Supplier supplier = new Supplier("FastSupplier");
+
+            while (true) {
+                System.out.println("\n-------Inventory Menu-------");
+                System.out.println("1. Add Product");
+                System.out.println("2. Remove Product");
+                System.out.println("3. View Inventory");
+                System.out.println("4. Restock Low Stock");
+                System.out.println("5. Exit");
+                System.out.print("Choose option: ");
+                int choice = sc.nextInt();
+                sc.nextLine();
+
+                try {
+                    if (choice == 1) {
+                        System.out.print("Enter type (Electronics/Clothes/Grocery): ");
+                        String type = sc.nextLine();
+                        System.out.print("Enter product ID: ");
+                        String id = sc.nextLine();
+                        System.out.print("Enter product name: ");
+                        String name = sc.nextLine();
+                        System.out.print("Enter stock: ");
+                        int stock = sc.nextInt();
+                        sc.nextLine();
+                        System.out.print("Enter expiry date (YYYY-MM-DD): ");
+                        String expiry = sc.nextLine();
+
+                        Product p;
+                        switch (type.toLowerCase()) {
+                            case "electronics":
+                                p = new Electronics(id, name, stock, expiry);
+                                break;
+                            case "clothes":
+                                p = new Clothing(id, name, stock, expiry);
+                                break;
+                            case "grocery":
+                                p = new Grocery(id, name, stock, expiry);
+                                break;
+                            default:
+                                throw new InvalidProductException("Invalid product type.");
+                        }
+
+                        inventory.addProduct(p);
+                    } else if (choice == 2) {
+                        System.out.print("Enter product ID to remove: ");
+                        String id = sc.nextLine();
+                        inventory.removeProduct(id);
+                    } else if (choice == 3) {
+                        inventory.showInventory();
+                    } else if (choice == 4) {
+                        inventory.restockLowItems(supplier);
+                    } else if (choice == 5) {
+                        System.out.println("Exiting system.");
+                        break;
+                    } else {
+                        System.out.println("Invalid choice.");
+                    }
+                } catch (Exception e) {
+                    System.out.println("Error: " + e.getMessage());
+                }
+            }
+
+            sc.close();
         }
     }
-
-    public Product getProductByName(String name) throws InvalidProductException {
-        for (Product p : products) {
-            if (p.name.equalsIgnoreCase(name)) return p;
-        }
-        throw new InvalidProductException("❌ " + name + " नहीं मिला।");
-    }
-}
-class Supplier {
-    public void orderStock(Product p, int quantity) {
-        p.restock(quantity);
-        System.out.println("📦 सप्लायर ने " + quantity + " items भेजे for " + p.name);
-    }
-}
-class Main {
-    public static void main(String[] args) {
-        Inventory inventory = new Inventory();
-        Supplier supplier = new Supplier();
-
-        // प्रोडक्ट्स जोड़ना
-        Product laptop = new Electronics("Laptop", 3, "2030-12-31");
-        Product jeans = new Clothing("Jeans", 7, "2028-06-15");
-        Product milk = new Grocery("Milk", 2, "2025-10-10");
-
-        inventory.addProduct(laptop);
-        inventory.addProduct(jeans);
-        inventory.addProduct(milk);
-
-        // इन्वेंट्री दिखाना
-        System.out.println("\n📋 इन्वेंट्री लिस्ट:");
-        inventory.showInventory();
-
-        // लो स्टॉक चेक करना
-        System.out.println("\n🔍 लो स्टॉक चेक:");
-        inventory.checkLowStock();
-
-        // सप्लायर से स्टॉक मंगवाना
-        supplier.orderStock(milk, 10);
-
-        // किसी प्रोडक्ट को हटाना
-        try {
-            inventory.removeProduct("Jeans");
-        } catch (InvalidProductException e) {
-            System.out.println(e.getMessage());
-        }
-
-        // प्रोडक्ट बेचने की कोशिश
-        try {
-            Product p = inventory.getProductByName("Laptop");
-            p.reduceStock(4); // ज़्यादा मांगने पर exception आएगा
-        } catch (Exception e) {
-            System.out.println("❌ Error: " + e.getMessage());
-        }
-
-        // फाइनल इन्वेंट्री
-        System.out.println("\n📋 फाइनल इन्वेंट्री:");
-        inventory.showInventory();
-    }
-}
 
